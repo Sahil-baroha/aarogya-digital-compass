@@ -12,7 +12,6 @@ import { Stethoscope, User } from 'lucide-react'
 export const AuthForm = () => {
   const { signIn, signUp } = useAuthContext()
   const [isLoading, setIsLoading] = useState(false)
-  const [signUpRole, setSignUpRole] = useState<'patient' | 'doctor'>('patient')
 
   const handleSignIn = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -34,18 +33,15 @@ export const AuthForm = () => {
     const email = formData.get('email') as string
     const password = formData.get('password') as string
     const fullName = formData.get('fullName') as string
+    const role = formData.get('role') as 'patient' | 'doctor'
     const phone = formData.get('phone') as string
     const licenseNumber = formData.get('licenseNumber') as string
-    const specialization = formData.get('specialization') as string
-    const qualification = formData.get('qualification') as string
 
     await signUp(email, password, {
       full_name: fullName,
-      role: signUpRole,
+      role,
       phone: phone || undefined,
-      license_number: signUpRole === 'doctor' ? licenseNumber : undefined,
-      specialization: signUpRole === 'doctor' ? specialization : undefined,
-      qualification: signUpRole === 'doctor' ? qualification : undefined
+      license_number: role === 'doctor' ? licenseNumber : undefined
     })
     setIsLoading(false)
   }
@@ -106,10 +102,37 @@ export const AuthForm = () => {
             <TabsContent value="signup">
               <form onSubmit={handleSignUp} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="role">I am a</Label>
-                  <Select value={signUpRole} onValueChange={(value: 'patient' | 'doctor') => setSignUpRole(value)}>
+                  <Label htmlFor="fullName">Full Name</Label>
+                  <Input
+                    id="fullName"
+                    name="fullName"
+                    placeholder="Enter your full name"
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    name="email"
+                    type="email"
+                    placeholder="Enter your email"
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="phone">Phone</Label>
+                  <Input
+                    id="phone"
+                    name="phone"
+                    placeholder="Enter your phone number"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="role">Role</Label>
+                  <Select name="role" required>
                     <SelectTrigger>
-                      <SelectValue />
+                      <SelectValue placeholder="Select your role" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="patient">
@@ -127,84 +150,30 @@ export const AuthForm = () => {
                     </SelectContent>
                   </Select>
                 </div>
-
                 <div className="space-y-2">
-                  <Label htmlFor="fullName">Full Name *</Label>
+                  <Label htmlFor="licenseNumber">License Number (for doctors)</Label>
                   <Input
-                    id="fullName"
-                    name="fullName"
-                    placeholder="Enter your full name"
-                    required
+                    id="licenseNumber"
+                    name="licenseNumber"
+                    placeholder="Enter medical license number"
                   />
                 </div>
-
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email *</Label>
-                  <Input
-                    id="email"
-                    name="email"
-                    type="email"
-                    placeholder="Enter your email"
-                    required
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="password">Password *</Label>
+                  <Label htmlFor="password">Password</Label>
                   <Input
                     id="password"
                     name="password"
                     type="password"
-                    placeholder="Enter your password"
+                    placeholder="Create a password"
                     required
                   />
                 </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="phone">Phone Number</Label>
-                  <Input
-                    id="phone"
-                    name="phone"
-                    placeholder="+91 9876543210"
-                  />
-                </div>
-
-                {signUpRole === 'doctor' && (
-                  <>
-                    <div className="space-y-2">
-                      <Label htmlFor="licenseNumber">Medical License Number *</Label>
-                      <Input
-                        id="licenseNumber"
-                        name="licenseNumber"
-                        placeholder="Enter your license number"
-                        required
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="specialization">Specialization</Label>
-                      <Input
-                        id="specialization"
-                        name="specialization"
-                        placeholder="e.g., Cardiology, General Medicine"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="qualification">Qualification</Label>
-                      <Input
-                        id="qualification"
-                        name="qualification"
-                        placeholder="e.g., MBBS, MD"
-                      />
-                    </div>
-                  </>
-                )}
-
                 <Button 
                   type="submit" 
                   className="w-full bg-gradient-to-r from-blue-600 to-green-600 hover:from-blue-700 hover:to-green-700"
                   disabled={isLoading}
                 >
-                  {isLoading ? "Creating account..." : "Create Account"}
+                  {isLoading ? "Creating account..." : "Sign Up"}
                 </Button>
               </form>
             </TabsContent>
