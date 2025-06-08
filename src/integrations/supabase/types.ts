@@ -166,6 +166,53 @@ export type Database = {
           },
         ]
       }
+      doctor_verification: {
+        Row: {
+          created_at: string | null
+          doctor_id: string | null
+          documents_submitted: Json | null
+          id: string
+          reviewed_at: string | null
+          reviewer_id: string | null
+          reviewer_notes: string | null
+          submitted_at: string | null
+          updated_at: string | null
+          verification_status: string
+        }
+        Insert: {
+          created_at?: string | null
+          doctor_id?: string | null
+          documents_submitted?: Json | null
+          id?: string
+          reviewed_at?: string | null
+          reviewer_id?: string | null
+          reviewer_notes?: string | null
+          submitted_at?: string | null
+          updated_at?: string | null
+          verification_status?: string
+        }
+        Update: {
+          created_at?: string | null
+          doctor_id?: string | null
+          documents_submitted?: Json | null
+          id?: string
+          reviewed_at?: string | null
+          reviewer_id?: string | null
+          reviewer_notes?: string | null
+          submitted_at?: string | null
+          updated_at?: string | null
+          verification_status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "doctor_verification_doctor_id_fkey"
+            columns: ["doctor_id"]
+            isOneToOne: false
+            referencedRelation: "doctor_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       health_documents: {
         Row: {
           appointment_id: string | null
@@ -499,6 +546,13 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_doctor_profile: {
+        Args: { doctor_user_id: string }
+        Returns: {
+          profile_data: Json
+          verification_data: Json
+        }[]
+      }
       get_patient_profile: {
         Args: { patient_user_id: string }
         Returns: {
@@ -506,6 +560,14 @@ export type Database = {
           medical_history: Json
           latest_vitals: Json
         }[]
+      }
+      update_doctor_profile: {
+        Args: {
+          doctor_user_id: string
+          profile_updates: Json
+          verification_updates?: Json
+        }
+        Returns: boolean
       }
       update_patient_profile: {
         Args: {
