@@ -499,7 +499,22 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_patient_profile: {
+        Args: { patient_user_id: string }
+        Returns: {
+          profile_data: Json
+          medical_history: Json
+          latest_vitals: Json
+        }[]
+      }
+      update_patient_profile: {
+        Args: {
+          patient_user_id: string
+          profile_updates: Json
+          medical_history_updates?: Json
+        }
+        Returns: boolean
+      }
     }
     Enums: {
       appointment_status:
