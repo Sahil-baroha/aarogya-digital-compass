@@ -114,8 +114,8 @@ export const useDoctorProfile = () => {
     if (!user?.id) return false
 
     try {
-      const verificationUpdates = {
-        verification_status: 'under_review',
+      const verificationUpdates: Partial<VerificationData> = {
+        verification_status: 'under_review' as const,
         documents_submitted: documents,
         submitted_at: new Date().toISOString()
       }
