@@ -1,57 +1,68 @@
 
 import { useState } from 'react'
-import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { PatientProfileData, MedicalHistoryData, usePatientProfile } from '@/hooks/usePatientProfile'
-import { User, Phone, Calendar, MapPin, Heart } from 'lucide-react'
+import { usePatientProfile } from '@/hooks/usePatientProfile'
+import { User, MapPin, Phone, Calendar, CreditCard } from 'lucide-react'
 
 export const ProfileForm = () => {
   const { profileData, medicalHistory, loading, updatePatientProfile } = usePatientProfile()
-  const [isEditing, setIsEditing] = useState(false)
-  const [formData, setFormData] = useState<Partial<PatientProfileData>>({})
-  const [medicalData, setMedicalData] = useState<Partial<MedicalHistoryData>>({})
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const handleEdit = () => {
-    setIsEditing(true)
-    setFormData({
-      full_name: profileData?.full_name || '',
-      phone: profileData?.phone || '',
-      date_of_birth: profileData?.date_of_birth || '',
-      gender: profileData?.gender || '',
-      abha_id: profileData?.abha_id || '',
-      address: profileData?.address || {},
-      emergency_contact: profileData?.emergency_contact || {}
-    })
-    setMedicalData({
-      allergies: medicalHistory?.allergies || [],
-      chronic_conditions: medicalHistory?.chronic_conditions || [],
-      medications: medicalHistory?.medications || [],
-      family_history: medicalHistory?.family_history || [],
-      lifestyle_data: medicalHistory?.lifestyle_data || {},
-      insurance_details: medicalHistory?.insurance_details || {}
-    })
-  }
-
-  const handleSave = async () => {
-    const success = await updatePatientProfile(formData, medicalData)
-    if (success) {
-      setIsEditing(false)
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    setIsSubmitting(true)
+    
+    const formData = new FormData(e.currentTarget)
+    
+    const profileUpdates = {
+      full_name: formData.get('fullName') as string,
+      phone: formData.get('phone') as string,
+      date_of_birth: formData.get('dateOfBirth') as string,
+      gender: formData.get('gender') as string,
+      abha_id: formData.get('abhaId') as string,
+      address: {
+        street: formData.get('street') as string,
+        city: formData.get('city') as string,
+        state: formData.get('state') as string,
+        pincode: formData.get('pincode') as string,
+      },
+      emergency_contact: {
+        name: formData.get('emergencyName') as string,
+        phone: formData.get('emergencyPhone') as string,
+        relation: formData.get('emergencyRelation') as string,
+      }
     }
-  }
 
-  const handleCancel = () => {
-    setIsEditing(false)
-    setFormData({})
-    setMedicalData({})
+    const medicalUpdates = {
+      allergies: (formData.get('allergies') as string).split(',').map(s => s.trim()).filter(Boolean),
+      chronic_conditions: (formData.get('chronicConditions') as string).split(',').map(s => s.trim()).filter(Boolean),
+      medications: (formData.get('medications') as string).split(',').map(s => s.trim()).filter(Boolean),
+      family_history: (formData.get('familyHistory') as string).split(',').map(s => s.trim()).filter(Boolean),
+      lifestyle_data: {
+        smoking: formData.get('smoking') === 'true',
+        alcohol: formData.get('alcohol') === 'true',
+        exercise: formData.get('exercise') as string,
+        diet: formData.get('diet') as string,
+      },
+      insurance_details: {
+        provider: formData.get('insuranceProvider') as string,
+        policy_number: formData.get('policyNumber') as string,
+        coverage: formData.get('coverage') as string,
+      }
+    }
+
+    await updatePatientProfile(profileUpdates, medicalUpdates)
+    setIsSubmitting(false)
   }
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center p-8">
+      <div className="flex items-center justify-center py-8">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
       </div>
     )
@@ -59,64 +70,47 @@ export const ProfileForm = () => {
 
   return (
     <div className="space-y-6">
-      {/* Personal Information */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center space-x-2">
             <User className="h-5 w-5" />
             <span>Personal Information</span>
           </CardTitle>
-          <CardDescription>Your basic profile information</CardDescription>
+          <CardDescription>Update your personal details and contact information</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="full_name">Full Name</Label>
-              {isEditing ? (
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="fullName">Full Name</Label>
                 <Input
-                  id="full_name"
-                  value={formData.full_name || ''}
-                  onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
+                  id="fullName"
+                  name="fullName"
+                  defaultValue={profileData?.full_name || ''}
+                  required
                 />
-              ) : (
-                <p className="text-sm py-2">{profileData?.full_name || 'Not provided'}</p>
-              )}
-            </div>
-
-            <div>
-              <Label htmlFor="phone">Phone Number</Label>
-              {isEditing ? (
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="phone">Phone Number</Label>
                 <Input
                   id="phone"
-                  value={formData.phone || ''}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                  name="phone"
+                  type="tel"
+                  defaultValue={profileData?.phone || ''}
                 />
-              ) : (
-                <p className="text-sm py-2">{profileData?.phone || 'Not provided'}</p>
-              )}
-            </div>
-
-            <div>
-              <Label htmlFor="date_of_birth">Date of Birth</Label>
-              {isEditing ? (
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="dateOfBirth">Date of Birth</Label>
                 <Input
-                  id="date_of_birth"
+                  id="dateOfBirth"
+                  name="dateOfBirth"
                   type="date"
-                  value={formData.date_of_birth || ''}
-                  onChange={(e) => setFormData({ ...formData, date_of_birth: e.target.value })}
+                  defaultValue={profileData?.date_of_birth || ''}
                 />
-              ) : (
-                <p className="text-sm py-2">{profileData?.date_of_birth || 'Not provided'}</p>
-              )}
-            </div>
-
-            <div>
-              <Label htmlFor="gender">Gender</Label>
-              {isEditing ? (
-                <Select
-                  value={formData.gender || ''}
-                  onValueChange={(value) => setFormData({ ...formData, gender: value })}
-                >
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="gender">Gender</Label>
+                <Select name="gender" defaultValue={profileData?.gender || ''}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select gender" />
                   </SelectTrigger>
@@ -126,119 +120,235 @@ export const ProfileForm = () => {
                     <SelectItem value="other">Other</SelectItem>
                   </SelectContent>
                 </Select>
-              ) : (
-                <p className="text-sm py-2">{profileData?.gender || 'Not provided'}</p>
-              )}
-            </div>
-
-            <div>
-              <Label htmlFor="abha_id">ABHA ID</Label>
-              {isEditing ? (
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="abhaId">ABHA ID</Label>
                 <Input
-                  id="abha_id"
-                  value={formData.abha_id || ''}
-                  onChange={(e) => setFormData({ ...formData, abha_id: e.target.value })}
-                  placeholder="14-digit ABHA ID"
+                  id="abhaId"
+                  name="abhaId"
+                  defaultValue={profileData?.abha_id || ''}
+                  placeholder="Enter your ABHA ID"
                 />
-              ) : (
-                <p className="text-sm py-2">{profileData?.abha_id || 'Not provided'}</p>
-              )}
+              </div>
             </div>
-          </div>
 
-          {!isEditing && (
-            <Button onClick={handleEdit} className="mt-4">
-              Edit Profile
+            <div className="space-y-4">
+              <h4 className="font-medium flex items-center space-x-2">
+                <MapPin className="h-4 w-4" />
+                <span>Address</span>
+              </h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="street">Street Address</Label>
+                  <Input
+                    id="street"
+                    name="street"
+                    defaultValue={profileData?.address?.street || ''}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="city">City</Label>
+                  <Input
+                    id="city"
+                    name="city"
+                    defaultValue={profileData?.address?.city || ''}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="state">State</Label>
+                  <Input
+                    id="state"
+                    name="state"
+                    defaultValue={profileData?.address?.state || ''}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="pincode">Pincode</Label>
+                  <Input
+                    id="pincode"
+                    name="pincode"
+                    defaultValue={profileData?.address?.pincode || ''}
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <h4 className="font-medium flex items-center space-x-2">
+                <Phone className="h-4 w-4" />
+                <span>Emergency Contact</span>
+              </h4>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="emergencyName">Contact Name</Label>
+                  <Input
+                    id="emergencyName"
+                    name="emergencyName"
+                    defaultValue={profileData?.emergency_contact?.name || ''}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="emergencyPhone">Contact Phone</Label>
+                  <Input
+                    id="emergencyPhone"
+                    name="emergencyPhone"
+                    type="tel"
+                    defaultValue={profileData?.emergency_contact?.phone || ''}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="emergencyRelation">Relation</Label>
+                  <Input
+                    id="emergencyRelation"
+                    name="emergencyRelation"
+                    defaultValue={profileData?.emergency_contact?.relation || ''}
+                    placeholder="e.g., Spouse, Parent"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <h4 className="font-medium">Medical History</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="allergies">Allergies (comma-separated)</Label>
+                  <Textarea
+                    id="allergies"
+                    name="allergies"
+                    defaultValue={medicalHistory?.allergies?.join(', ') || ''}
+                    placeholder="e.g., Peanuts, Penicillin"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="chronicConditions">Chronic Conditions (comma-separated)</Label>
+                  <Textarea
+                    id="chronicConditions"
+                    name="chronicConditions"
+                    defaultValue={medicalHistory?.chronic_conditions?.join(', ') || ''}
+                    placeholder="e.g., Diabetes, Hypertension"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="medications">Current Medications (comma-separated)</Label>
+                  <Textarea
+                    id="medications"
+                    name="medications"
+                    defaultValue={medicalHistory?.medications?.join(', ') || ''}
+                    placeholder="e.g., Metformin, Lisinopril"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="familyHistory">Family History (comma-separated)</Label>
+                  <Textarea
+                    id="familyHistory"
+                    name="familyHistory"
+                    defaultValue={medicalHistory?.family_history?.join(', ') || ''}
+                    placeholder="e.g., Heart disease, Cancer"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <h4 className="font-medium">Lifestyle Information</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="smoking">Smoking</Label>
+                  <Select name="smoking" defaultValue={medicalHistory?.lifestyle_data?.smoking ? 'true' : 'false'}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Do you smoke?" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="false">No</SelectItem>
+                      <SelectItem value="true">Yes</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="alcohol">Alcohol Consumption</Label>
+                  <Select name="alcohol" defaultValue={medicalHistory?.lifestyle_data?.alcohol ? 'true' : 'false'}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Do you consume alcohol?" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="false">No</SelectItem>
+                      <SelectItem value="true">Yes</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="exercise">Exercise Frequency</Label>
+                  <Select name="exercise" defaultValue={medicalHistory?.lifestyle_data?.exercise || ''}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="How often do you exercise?" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Never</SelectItem>
+                      <SelectItem value="rare">Rarely</SelectItem>
+                      <SelectItem value="weekly">Weekly</SelectItem>
+                      <SelectItem value="daily">Daily</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="diet">Diet Type</Label>
+                  <Select name="diet" defaultValue={medicalHistory?.lifestyle_data?.diet || ''}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="What type of diet do you follow?" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="vegetarian">Vegetarian</SelectItem>
+                      <SelectItem value="vegan">Vegan</SelectItem>
+                      <SelectItem value="non-vegetarian">Non-Vegetarian</SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <h4 className="font-medium flex items-center space-x-2">
+                <CreditCard className="h-4 w-4" />
+                <span>Insurance Details</span>
+              </h4>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="insuranceProvider">Insurance Provider</Label>
+                  <Input
+                    id="insuranceProvider"
+                    name="insuranceProvider"
+                    defaultValue={medicalHistory?.insurance_details?.provider || ''}
+                    placeholder="e.g., Star Health"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="policyNumber">Policy Number</Label>
+                  <Input
+                    id="policyNumber"
+                    name="policyNumber"
+                    defaultValue={medicalHistory?.insurance_details?.policy_number || ''}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="coverage">Coverage Amount</Label>
+                  <Input
+                    id="coverage"
+                    name="coverage"
+                    defaultValue={medicalHistory?.insurance_details?.coverage || ''}
+                    placeholder="e.g., ₹5,00,000"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <Button type="submit" disabled={isSubmitting} className="w-full">
+              {isSubmitting ? 'Updating...' : 'Update Profile'}
             </Button>
-          )}
+          </form>
         </CardContent>
       </Card>
-
-      {/* Medical History */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <Heart className="h-5 w-5" />
-            <span>Medical History</span>
-          </CardTitle>
-          <CardDescription>Your medical information and history</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div>
-            <Label htmlFor="allergies">Allergies</Label>
-            {isEditing ? (
-              <Textarea
-                id="allergies"
-                value={medicalData.allergies?.join(', ') || ''}
-                onChange={(e) => setMedicalData({ 
-                  ...medicalData, 
-                  allergies: e.target.value.split(',').map(item => item.trim()).filter(Boolean) 
-                })}
-                placeholder="Enter allergies separated by commas"
-              />
-            ) : (
-              <p className="text-sm py-2">
-                {medicalHistory?.allergies?.length 
-                  ? medicalHistory.allergies.join(', ') 
-                  : 'None reported'
-                }
-              </p>
-            )}
-          </div>
-
-          <div>
-            <Label htmlFor="medications">Current Medications</Label>
-            {isEditing ? (
-              <Textarea
-                id="medications"
-                value={medicalData.medications?.join(', ') || ''}
-                onChange={(e) => setMedicalData({ 
-                  ...medicalData, 
-                  medications: e.target.value.split(',').map(item => item.trim()).filter(Boolean) 
-                })}
-                placeholder="Enter medications separated by commas"
-              />
-            ) : (
-              <p className="text-sm py-2">
-                {medicalHistory?.medications?.length 
-                  ? medicalHistory.medications.join(', ') 
-                  : 'None reported'
-                }
-              </p>
-            )}
-          </div>
-
-          <div>
-            <Label htmlFor="chronic_conditions">Chronic Conditions</Label>
-            {isEditing ? (
-              <Textarea
-                id="chronic_conditions"
-                value={medicalData.chronic_conditions?.join(', ') || ''}
-                onChange={(e) => setMedicalData({ 
-                  ...medicalData, 
-                  chronic_conditions: e.target.value.split(',').map(item => item.trim()).filter(Boolean) 
-                })}
-                placeholder="Enter chronic conditions separated by commas"
-              />
-            ) : (
-              <p className="text-sm py-2">
-                {medicalHistory?.chronic_conditions?.length 
-                  ? medicalHistory.chronic_conditions.join(', ') 
-                  : 'None reported'
-                }
-              </p>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Action Buttons */}
-      {isEditing && (
-        <div className="flex space-x-2">
-          <Button onClick={handleSave}>Save Changes</Button>
-          <Button variant="outline" onClick={handleCancel}>Cancel</Button>
-        </div>
-      )}
     </div>
   )
 }
