@@ -7,6 +7,18 @@ import { Label } from '@/components/ui/label'
 import { usePatientProfile } from '@/hooks/usePatientProfile'
 import { Heart, Thermometer, Weight, Activity, Droplets } from 'lucide-react'
 
+interface VitalsData {
+  heart_rate?: number
+  blood_pressure_systolic?: number
+  blood_pressure_diastolic?: number
+  temperature?: number
+  weight?: number
+  height?: number
+  oxygen_saturation?: number
+  blood_glucose?: number
+  bmi?: number
+}
+
 export const VitalsForm = () => {
   const { latestVitals, addVitals } = usePatientProfile()
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -17,7 +29,7 @@ export const VitalsForm = () => {
     
     const formData = new FormData(e.currentTarget)
     
-    const vitalsData = {
+    const vitalsData: VitalsData = {
       heart_rate: parseInt(formData.get('heartRate') as string) || undefined,
       blood_pressure_systolic: parseInt(formData.get('systolic') as string) || undefined,
       blood_pressure_diastolic: parseInt(formData.get('diastolic') as string) || undefined,
