@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -91,8 +90,10 @@ export const MedicalRecords = () => {
         created_at: prescription.created_at,
         status: prescription.status,
         doctor: {
-          full_name: prescription.doctor.profiles.full_name,
-          specialization: prescription.doctor.specialization,
+          full_name: Array.isArray(prescription.doctor) ? 
+            (Array.isArray(prescription.doctor[0]?.profiles) ? prescription.doctor[0].profiles[0]?.full_name : prescription.doctor[0]?.profiles?.full_name) :
+            (Array.isArray(prescription.doctor?.profiles) ? prescription.doctor.profiles[0]?.full_name : prescription.doctor?.profiles?.full_name),
+          specialization: Array.isArray(prescription.doctor) ? prescription.doctor[0]?.specialization : prescription.doctor?.specialization,
         },
       }))
 

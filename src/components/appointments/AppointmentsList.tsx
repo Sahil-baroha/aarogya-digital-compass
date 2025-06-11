@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -76,11 +75,13 @@ export const AppointmentsList = ({ userRole }: AppointmentsListProps) => {
         notes: apt.notes,
         status: apt.status,
         doctor: {
-          full_name: apt.doctor.profiles.full_name,
-          specialization: apt.doctor.specialization,
+          full_name: Array.isArray(apt.doctor) ? 
+            (Array.isArray(apt.doctor[0]?.profiles) ? apt.doctor[0].profiles[0]?.full_name : apt.doctor[0]?.profiles?.full_name) :
+            (Array.isArray(apt.doctor?.profiles) ? apt.doctor.profiles[0]?.full_name : apt.doctor?.profiles?.full_name),
+          specialization: Array.isArray(apt.doctor) ? apt.doctor[0]?.specialization : apt.doctor?.specialization,
         },
         patient: apt.patient ? {
-          full_name: apt.patient.full_name,
+          full_name: Array.isArray(apt.patient) ? apt.patient[0]?.full_name : apt.patient?.full_name,
         } : undefined,
       }))
 

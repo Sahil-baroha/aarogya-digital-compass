@@ -66,7 +66,7 @@ export const AppointmentBooking = () => {
 
       const formattedDoctors = data.map(doctor => ({
         id: doctor.id,
-        full_name: doctor.profiles.full_name,
+        full_name: Array.isArray(doctor.profiles) ? doctor.profiles[0]?.full_name : doctor.profiles.full_name,
         specialization: doctor.specialization,
         consultation_fee: doctor.consultation_fee,
       }))
