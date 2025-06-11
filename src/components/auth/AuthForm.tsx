@@ -10,40 +10,60 @@ import { useAuthContext } from '@/components/AuthProvider'
 import { Stethoscope, User } from 'lucide-react'
 
 export const AuthForm = () => {
-  const { signIn, signUp } = useAuthContext()
-  const [isLoading, setIsLoading] = useState(false)
+  const { signIn, signUp, loading } = useAuthContext()
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [selectedRole, setSelectedRole] = useState<'patient' | 'doctor'>('patient')
 
   const handleSignIn = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    setIsLoading(true)
+    setIsSubmitting(true)
     
     const formData = new FormData(e.currentTarget)
     const email = formData.get('email') as string
     const password = formData.get('password') as string
 
-    await signIn(email, password)
-    setIsLoading(false)
+    const { error } = await signIn(email, password)
+    if (!error) {
+      // Redirect will be handled by the auth state change
+      window.location.href = '/dashboard'
+    }
+    setIsSubmitting(false)
   }
 
   const handleSignUp = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    setIsLoading(true)
+    setIsSubmitting(true)
     
     const formData = new FormData(e.currentTarget)
     const email = formData.get('email') as string
     const password = formData.get('password') as string
     const fullName = formData.get('fullName') as string
-    const role = formData.get('role') as 'patient' | 'doctor'
     const phone = formData.get('phone') as string
     const licenseNumber = formData.get('licenseNumber') as string
+    const specialization = formData.get('specialization') as string
+    const qualification = formData.get('qualification') as string
 
-    await signUp(email, password, {
-      full_name: fullName,
-      role,
+    if (!fullName.trim()) {
+      setIsSubmitting(false)
+      return
+    }
+
+    const { error } = await signUp(email, password, {
+      full_name: fullName.trim(),
+      role: selectedRole,
       phone: phone || undefined,
-      license_number: role === 'doctor' ? licenseNumber : undefined
+      license_number: selectedRole === 'doctor' ? licenseNumber : undefined,
+      specialization: selectedRole === 'doctor' ? specialization : undefined,
+      qualification: selectedRole === 'doctor' ? qualification : undefined
     })
-    setIsLoading(false)
+
+    if (!error) {
+      // Reset form on success
+      e.currentTarget.reset()
+      setSelectedRole('patient')
+    }
+    
+    setIsSubmitting(false)
   }
 
   return (
@@ -70,31 +90,33 @@ export const AuthForm = () => {
             <TabsContent value="signin">
               <form onSubmit={handleSignIn} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
+                  <Label htmlFor="signin-email">Email</Label>
                   <Input
-                    id="email"
+                    id="signin-email"
                     name="email"
                     type="email"
                     placeholder="Enter your email"
                     required
+                    disabled={loading || isSubmitting}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="password">Password</Label>
+                  <Label htmlFor="signin-password">Password</Label>
                   <Input
-                    id="password"
+                    id="signin-password"
                     name="password"
                     type="password"
                     placeholder="Enter your password"
                     required
+                    disabled={loading || isSubmitting}
                   />
                 </div>
                 <Button 
                   type="submit" 
                   className="w-full bg-gradient-to-r from-blue-600 to-green-600 hover:from-blue-700 hover:to-green-700"
-                  disabled={isLoading}
+                  disabled={loading || isSubmitting}
                 >
-                  {isLoading ? "Signing in..." : "Sign In"}
+                  {isSubmitting ? "Signing in..." : "Sign In"}
                 </Button>
               </form>
             </TabsContent>
@@ -102,22 +124,24 @@ export const AuthForm = () => {
             <TabsContent value="signup">
               <form onSubmit={handleSignUp} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="fullName">Full Name</Label>
+                  <Label htmlFor="fullName">Full Name *</Label>
                   <Input
                     id="fullName"
                     name="fullName"
                     placeholder="Enter your full name"
                     required
+                    disabled={loading || isSubmitting}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
+                  <Label htmlFor="signup-email">Email *</Label>
                   <Input
-                    id="email"
+                    id="signup-email"
                     name="email"
                     type="email"
                     placeholder="Enter your email"
                     required
+                    disabled={loading || isSubmitting}
                   />
                 </div>
                 <div className="space-y-2">
@@ -126,11 +150,12 @@ export const AuthForm = () => {
                     id="phone"
                     name="phone"
                     placeholder="Enter your phone number"
+                    disabled={loading || isSubmitting}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="role">Role</Label>
-                  <Select name="role" required>
+                  <Label htmlFor="role">Role *</Label>
+                  <Select value={selectedRole} onValueChange={(value: 'patient' | 'doctor') => setSelectedRole(value)} disabled={loading || isSubmitting}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select your role" />
                     </SelectTrigger>
@@ -150,30 +175,56 @@ export const AuthForm = () => {
                     </SelectContent>
                   </Select>
                 </div>
+                
+                {selectedRole === 'doctor' && (
+                  <>
+                    <div className="space-y-2">
+                      <Label htmlFor="licenseNumber">Medical License Number</Label>
+                      <Input
+                        id="licenseNumber"
+                        name="licenseNumber"
+                        placeholder="Enter medical license number"
+                        disabled={loading || isSubmitting}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="specialization">Specialization</Label>
+                      <Input
+                        id="specialization"
+                        name="specialization"
+                        placeholder="Enter your specialization"
+                        disabled={loading || isSubmitting}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="qualification">Qualification</Label>
+                      <Input
+                        id="qualification"
+                        name="qualification"
+                        placeholder="Enter your qualification"
+                        disabled={loading || isSubmitting}
+                      />
+                    </div>
+                  </>
+                )}
+                
                 <div className="space-y-2">
-                  <Label htmlFor="licenseNumber">License Number (for doctors)</Label>
+                  <Label htmlFor="signup-password">Password *</Label>
                   <Input
-                    id="licenseNumber"
-                    name="licenseNumber"
-                    placeholder="Enter medical license number"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="password">Password</Label>
-                  <Input
-                    id="password"
+                    id="signup-password"
                     name="password"
                     type="password"
                     placeholder="Create a password"
                     required
+                    disabled={loading || isSubmitting}
                   />
                 </div>
                 <Button 
                   type="submit" 
                   className="w-full bg-gradient-to-r from-blue-600 to-green-600 hover:from-blue-700 hover:to-green-700"
-                  disabled={isLoading}
+                  disabled={loading || isSubmitting}
                 >
-                  {isLoading ? "Creating account..." : "Sign Up"}
+                  {isSubmitting ? "Creating account..." : "Sign Up"}
                 </Button>
               </form>
             </TabsContent>

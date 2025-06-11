@@ -37,7 +37,10 @@ export const useAuth = () => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       setUser(session?.user ?? null)
       if (session?.user) {
-        fetchUserProfile(session.user.id)
+        // Use setTimeout to prevent potential deadlocks
+        setTimeout(() => {
+          fetchUserProfile(session.user.id)
+        }, 0)
       } else {
         setUserProfile(null)
         setLoading(false)
@@ -92,17 +95,20 @@ export const useAuth = () => {
     qualification?: string
   }) => {
     try {
+      setLoading(true)
+      
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
+          emailRedirectTo: `${window.location.origin}/dashboard`,
           data: {
             full_name: userData.full_name,
             role: userData.role,
-            phone: userData.phone,
-            license_number: userData.license_number,
-            specialization: userData.specialization,
-            qualification: userData.qualification
+            phone: userData.phone || '',
+            license_number: userData.license_number || '',
+            specialization: userData.specialization || '',
+            qualification: userData.qualification || ''
           }
         }
       })
@@ -118,17 +124,22 @@ export const useAuth = () => {
 
       return { data, error: null }
     } catch (error: any) {
+      console.error('Sign up error:', error)
       toast({
         title: "Error",
-        description: error.message,
+        description: error.message || "Failed to create account",
         variant: "destructive"
       })
       return { data: null, error }
+    } finally {
+      setLoading(false)
     }
   }
 
   const signIn = async (email: string, password: string) => {
     try {
+      setLoading(true)
+      
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password
@@ -143,17 +154,22 @@ export const useAuth = () => {
 
       return { data, error: null }
     } catch (error: any) {
+      console.error('Sign in error:', error)
       toast({
         title: "Error",
-        description: error.message,
+        description: error.message || "Failed to sign in",
         variant: "destructive"
       })
       return { data: null, error }
+    } finally {
+      setLoading(false)
     }
   }
 
   const signOut = async () => {
     try {
+      setLoading(true)
+      
       const { error } = await supabase.auth.signOut()
       if (error) throw error
 
@@ -162,11 +178,14 @@ export const useAuth = () => {
         description: "Signed out successfully!"
       })
     } catch (error: any) {
+      console.error('Sign out error:', error)
       toast({
         title: "Error",
-        description: error.message,
+        description: error.message || "Failed to sign out",
         variant: "destructive"
       })
+    } finally {
+      setLoading(false)
     }
   }
 

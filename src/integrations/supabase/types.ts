@@ -491,7 +491,7 @@ export type Database = {
           date_of_birth?: string | null
           email?: string | null
           emergency_contact?: Json | null
-          full_name: string
+          full_name?: string
           gender?: string | null
           id: string
           phone?: string | null
