@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -67,23 +68,49 @@ export const AppointmentsList = ({ userRole }: AppointmentsListProps) => {
 
       if (error) throw error
 
-      const formattedAppointments = data.map(apt => ({
-        id: apt.id,
-        appointment_datetime: apt.appointment_datetime,
-        consultation_type: apt.consultation_type,
-        symptoms: apt.symptoms,
-        notes: apt.notes,
-        status: apt.status,
-        doctor: {
-          full_name: Array.isArray(apt.doctor) ? 
-            (Array.isArray(apt.doctor[0]?.profiles) ? apt.doctor[0].profiles[0]?.full_name : apt.doctor[0]?.profiles?.full_name) :
-            (Array.isArray(apt.doctor?.profiles) ? apt.doctor.profiles[0]?.full_name : apt.doctor?.profiles?.full_name),
-          specialization: Array.isArray(apt.doctor) ? apt.doctor[0]?.specialization : apt.doctor?.specialization,
-        },
-        patient: apt.patient ? {
-          full_name: Array.isArray(apt.patient) ? apt.patient[0]?.full_name : apt.patient?.full_name,
-        } : undefined,
-      }))
+      const formattedAppointments = data.map(apt => {
+        // Handle doctor data safely
+        const doctorData = apt.doctor as any
+        let doctorFullName = 'Unknown Doctor'
+        let doctorSpecialization = undefined
+
+        if (Array.isArray(doctorData)) {
+          const firstDoctor = doctorData[0]
+          if (firstDoctor?.profiles) {
+            const profileData = firstDoctor.profiles
+            doctorFullName = Array.isArray(profileData) ? profileData[0]?.full_name : profileData?.full_name
+          }
+          doctorSpecialization = firstDoctor?.specialization
+        } else if (doctorData?.profiles) {
+          const profileData = doctorData.profiles
+          doctorFullName = Array.isArray(profileData) ? profileData[0]?.full_name : profileData?.full_name
+          doctorSpecialization = doctorData.specialization
+        }
+
+        // Handle patient data safely
+        const patientData = apt.patient as any
+        let patientFullName = undefined
+
+        if (patientData) {
+          patientFullName = Array.isArray(patientData) ? patientData[0]?.full_name : patientData?.full_name
+        }
+
+        return {
+          id: apt.id,
+          appointment_datetime: apt.appointment_datetime,
+          consultation_type: apt.consultation_type,
+          symptoms: apt.symptoms,
+          notes: apt.notes,
+          status: apt.status,
+          doctor: {
+            full_name: doctorFullName || 'Unknown Doctor',
+            specialization: doctorSpecialization,
+          },
+          patient: patientFullName ? {
+            full_name: patientFullName,
+          } : undefined,
+        }
+      })
 
       setAppointments(formattedAppointments)
     } catch (error: any) {

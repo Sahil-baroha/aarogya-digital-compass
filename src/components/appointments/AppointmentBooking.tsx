@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -64,12 +65,24 @@ export const AppointmentBooking = () => {
 
       if (error) throw error
 
-      const formattedDoctors = data.map(doctor => ({
-        id: doctor.id,
-        full_name: Array.isArray(doctor.profiles) ? doctor.profiles[0]?.full_name : doctor.profiles.full_name,
-        specialization: doctor.specialization,
-        consultation_fee: doctor.consultation_fee,
-      }))
+      const formattedDoctors = data.map(doctor => {
+        // Handle the profiles data safely
+        const profileData = doctor.profiles as any
+        let fullName = 'Unknown Doctor'
+        
+        if (Array.isArray(profileData)) {
+          fullName = profileData[0]?.full_name || 'Unknown Doctor'
+        } else if (profileData?.full_name) {
+          fullName = profileData.full_name
+        }
+
+        return {
+          id: doctor.id,
+          full_name: fullName,
+          specialization: doctor.specialization,
+          consultation_fee: doctor.consultation_fee,
+        }
+      })
 
       setDoctors(formattedDoctors)
     } catch (error) {
