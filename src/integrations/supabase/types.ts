@@ -9,6 +9,84 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      aadhaar_verifications: {
+        Row: {
+          aadhaar_number: string
+          attempts_count: number | null
+          created_at: string | null
+          id: string
+          last_attempt_at: string | null
+          otp_expires_at: string
+          otp_hash: string
+          user_id: string
+          verification_status: string
+          verified_at: string | null
+        }
+        Insert: {
+          aadhaar_number: string
+          attempts_count?: number | null
+          created_at?: string | null
+          id?: string
+          last_attempt_at?: string | null
+          otp_expires_at: string
+          otp_hash: string
+          user_id: string
+          verification_status?: string
+          verified_at?: string | null
+        }
+        Update: {
+          aadhaar_number?: string
+          attempts_count?: number | null
+          created_at?: string | null
+          id?: string
+          last_attempt_at?: string | null
+          otp_expires_at?: string
+          otp_hash?: string
+          user_id?: string
+          verification_status?: string
+          verified_at?: string | null
+        }
+        Relationships: []
+      }
+      abha_verifications: {
+        Row: {
+          abha_id: string
+          created_at: string | null
+          id: string
+          last_attempt_at: string | null
+          updated_at: string | null
+          user_id: string
+          verification_attempts: number | null
+          verification_status: string
+          verification_token: string | null
+          verified_at: string | null
+        }
+        Insert: {
+          abha_id: string
+          created_at?: string | null
+          id?: string
+          last_attempt_at?: string | null
+          updated_at?: string | null
+          user_id: string
+          verification_attempts?: number | null
+          verification_status?: string
+          verification_token?: string | null
+          verified_at?: string | null
+        }
+        Update: {
+          abha_id?: string
+          created_at?: string | null
+          id?: string
+          last_attempt_at?: string | null
+          updated_at?: string | null
+          user_id?: string
+          verification_attempts?: number | null
+          verification_status?: string
+          verification_token?: string | null
+          verified_at?: string | null
+        }
+        Relationships: []
+      }
       appointments: {
         Row: {
           appointment_datetime: string
@@ -280,6 +358,45 @@ export type Database = {
           },
         ]
       }
+      medical_data_access_logs: {
+        Row: {
+          access_reason: string | null
+          access_type: string
+          accessed_user_id: string
+          created_at: string | null
+          id: string
+          ip_address: unknown | null
+          resource_id: string | null
+          resource_type: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          access_reason?: string | null
+          access_type: string
+          accessed_user_id: string
+          created_at?: string | null
+          id?: string
+          ip_address?: unknown | null
+          resource_id?: string | null
+          resource_type: string
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          access_reason?: string | null
+          access_type?: string
+          accessed_user_id?: string
+          created_at?: string | null
+          id?: string
+          ip_address?: unknown | null
+          resource_id?: string | null
+          resource_type?: string
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       patient_medical_history: {
         Row: {
           allergies: string[] | null
@@ -520,6 +637,42 @@ export type Database = {
           },
         ]
       }
+      user_security_settings: {
+        Row: {
+          created_at: string | null
+          data_access_notifications: boolean | null
+          id: string
+          login_notifications: boolean | null
+          require_reauth_for_sensitive: boolean | null
+          session_timeout_minutes: number | null
+          two_factor_enabled: boolean | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          data_access_notifications?: boolean | null
+          id?: string
+          login_notifications?: boolean | null
+          require_reauth_for_sensitive?: boolean | null
+          session_timeout_minutes?: number | null
+          two_factor_enabled?: boolean | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          data_access_notifications?: boolean | null
+          id?: string
+          login_notifications?: boolean | null
+          require_reauth_for_sensitive?: boolean | null
+          session_timeout_minutes?: number | null
+          two_factor_enabled?: boolean | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       users: {
         Row: {
           created_at: string | null
@@ -561,6 +714,19 @@ export type Database = {
           latest_vitals: Json
         }[]
       }
+      log_medical_data_access: {
+        Args: {
+          p_user_id: string
+          p_accessed_user_id: string
+          p_access_type: string
+          p_resource_type: string
+          p_resource_id?: string
+          p_ip_address?: unknown
+          p_user_agent?: string
+          p_access_reason?: string
+        }
+        Returns: undefined
+      }
       update_doctor_profile: {
         Args: {
           doctor_user_id: string
@@ -575,6 +741,14 @@ export type Database = {
           profile_updates: Json
           medical_history_updates?: Json
         }
+        Returns: boolean
+      }
+      validate_aadhaar_number: {
+        Args: { aadhaar_number: string }
+        Returns: boolean
+      }
+      validate_abha_id: {
+        Args: { abha_id: string }
         Returns: boolean
       }
     }
