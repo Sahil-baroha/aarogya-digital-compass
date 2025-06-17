@@ -4,18 +4,23 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Calendar, FileText, User, Activity, Plus } from 'lucide-react'
+import { Calendar, FileText, User, Activity, Plus, Shield } from 'lucide-react'
 import { useAuthContext } from '@/components/AuthProvider'
 import { usePatientProfile } from '@/hooks/usePatientProfile'
+import { useRecentActivity } from '@/hooks/useRecentActivity'
 import { ProfileForm } from './ProfileForm'
 import { VitalsForm } from './VitalsForm'
+import { QuickStats } from './QuickStats'
+import { RecentActivity } from '@/components/shared/RecentActivity'
 import { AppointmentBooking } from '@/components/appointments/AppointmentBooking'
 import { AppointmentsList } from '@/components/appointments/AppointmentsList'
 import { MedicalRecords } from '@/components/records/MedicalRecords'
+import { VerificationPage } from '@/components/verification/VerificationPage'
 
 export const PatientDashboard = () => {
   const { userProfile } = useAuthContext()
   const { profileData, medicalHistory, latestVitals, loading } = usePatientProfile()
+  const { activities, loading: activityLoading } = useRecentActivity('patient')
   const [activeTab, setActiveTab] = useState('overview')
 
   if (loading) {
@@ -24,6 +29,30 @@ export const PatientDashboard = () => {
         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
       </div>
     )
+  }
+
+  const calculateHealthScore = () => {
+    if (!latestVitals) return undefined
+    
+    let score = 100
+    
+    // Check BMI
+    if (latestVitals.bmi) {
+      if (latestVitals.bmi < 18.5 || latestVitals.bmi > 30) score -= 20
+      else if (latestVitals.bmi > 25) score -= 10
+    }
+    
+    // Check blood pressure
+    if (latestVitals.blood_pressure_systolic) {
+      if (latestVitals.blood_pressure_systolic > 140 || latestVitals.blood_pressure_systolic < 90) score -= 15
+    }
+    
+    // Check heart rate
+    if (latestVitals.heart_rate) {
+      if (latestVitals.heart_rate > 100 || latestVitals.heart_rate < 60) score -= 10
+    }
+    
+    return Math.max(score, 0)
   }
 
   return (
@@ -36,79 +65,25 @@ export const PatientDashboard = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="appointments">Appointments</TabsTrigger>
           <TabsTrigger value="records">Medical Records</TabsTrigger>
           <TabsTrigger value="profile">Profile</TabsTrigger>
           <TabsTrigger value="vitals">Vitals</TabsTrigger>
+          <TabsTrigger value="verification">
+            <Shield className="h-4 w-4 mr-2" />
+            Verification
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">ABHA ID</CardTitle>
-                <User className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  {profileData?.abha_id || 'Not Set'}
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Your unique health identifier
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Latest BMI</CardTitle>
-                <Activity className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  {latestVitals?.bmi ? latestVitals.bmi.toFixed(1) : 'N/A'}
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Body mass index
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Blood Pressure</CardTitle>
-                <Activity className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  {latestVitals?.blood_pressure_systolic && latestVitals?.blood_pressure_diastolic
-                    ? `${latestVitals.blood_pressure_systolic}/${latestVitals.blood_pressure_diastolic}`
-                    : 'N/A'
-                  }
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  mmHg
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Heart Rate</CardTitle>
-                <Activity className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  {latestVitals?.heart_rate || 'N/A'}
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  bpm
-                </p>
-              </CardContent>
-            </Card>
-          </div>
+          <QuickStats 
+            upcomingAppointments={3}
+            totalRecords={12}
+            lastVitalsDate={latestVitals?.recorded_at ? new Date(latestVitals.recorded_at).toLocaleDateString() : undefined}
+            healthScore={calculateHealthScore()}
+          />
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <Card>
@@ -142,6 +117,14 @@ export const PatientDashboard = () => {
                 >
                   <FileText className="mr-2 h-4 w-4" />
                   View Medical Records
+                </Button>
+                <Button 
+                  className="w-full justify-start" 
+                  variant="outline"
+                  onClick={() => setActiveTab('verification')}
+                >
+                  <Shield className="mr-2 h-4 w-4" />
+                  Verify Identity
                 </Button>
               </CardContent>
             </Card>
@@ -203,6 +186,11 @@ export const PatientDashboard = () => {
               </CardContent>
             </Card>
           </div>
+
+          <RecentActivity 
+            activities={activities} 
+            maxItems={5} 
+          />
         </TabsContent>
 
         <TabsContent value="appointments" className="space-y-6">
@@ -226,6 +214,10 @@ export const PatientDashboard = () => {
 
         <TabsContent value="vitals">
           <VitalsForm />
+        </TabsContent>
+
+        <TabsContent value="verification">
+          <VerificationPage />
         </TabsContent>
       </Tabs>
     </div>

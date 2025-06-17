@@ -4,15 +4,20 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Calendar, Users, CheckCircle, Clock, Star } from 'lucide-react'
+import { Calendar, Users, CheckCircle, Clock, Star, Shield } from 'lucide-react'
 import { useAuthContext } from '@/components/AuthProvider'
 import { useDoctorProfile } from '@/hooks/useDoctorProfile'
+import { useRecentActivity } from '@/hooks/useRecentActivity'
 import { DoctorProfileForm } from './DoctorProfileForm'
+import { DoctorStats } from './DoctorStats'
+import { RecentActivity } from '@/components/shared/RecentActivity'
 import { AppointmentsList } from '@/components/appointments/AppointmentsList'
+import { VerificationPage } from '@/components/verification/VerificationPage'
 
 export const DoctorDashboard = () => {
   const { userProfile } = useAuthContext()
   const { profileData, verificationData, loading } = useDoctorProfile()
+  const { activities, loading: activityLoading } = useRecentActivity('doctor')
   const [activeTab, setActiveTab] = useState('overview')
 
   if (loading) {
@@ -76,74 +81,24 @@ export const DoctorDashboard = () => {
       )}
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="appointments">Appointments</TabsTrigger>
-          <TabsTrigger value="profile">Profile & Verification</TabsTrigger>
+          <TabsTrigger value="profile">Profile</TabsTrigger>
+          <TabsTrigger value="verification">
+            <Shield className="h-4 w-4 mr-2" />
+            Verification
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">License Number</CardTitle>
-                <CheckCircle className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  {profileData?.license_number || 'Not Set'}
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Medical license
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Experience</CardTitle>
-                <Star className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  {profileData?.experience_years || 0} years
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Professional experience
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Consultation Fee</CardTitle>
-                <Users className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  ₹{profileData?.consultation_fee || 0}
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Per consultation
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Status</CardTitle>
-                <CheckCircle className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  {profileData?.is_verified ? 'Verified' : 'Pending'}
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Account status
-                </p>
-              </CardContent>
-            </Card>
-          </div>
+          <DoctorStats 
+            totalPatients={25}
+            todayAppointments={8}
+            monthlyRevenue={125000}
+            avgRating={4.8}
+            isVerified={profileData?.is_verified || false}
+          />
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <Card>
@@ -174,12 +129,20 @@ export const DoctorDashboard = () => {
                   <Button 
                     className="w-full justify-start" 
                     variant="outline"
-                    onClick={() => setActiveTab('profile')}
+                    onClick={() => setActiveTab('verification')}
                   >
                     <CheckCircle className="mr-2 h-4 w-4" />
                     Complete Verification
                   </Button>
                 )}
+                <Button 
+                  className="w-full justify-start" 
+                  variant="outline"
+                  onClick={() => setActiveTab('verification')}
+                >
+                  <Shield className="mr-2 h-4 w-4" />
+                  Identity Verification
+                </Button>
               </CardContent>
             </Card>
 
@@ -205,6 +168,13 @@ export const DoctorDashboard = () => {
                   </p>
                 </div>
 
+                <div>
+                  <h4 className="font-medium text-sm mb-1">License Number:</h4>
+                  <p className="text-sm text-gray-600">
+                    {profileData?.license_number || 'Not specified'}
+                  </p>
+                </div>
+
                 {profileData?.clinic_address && (
                   <div>
                     <h4 className="font-medium text-sm mb-1">Clinic Address:</h4>
@@ -225,6 +195,11 @@ export const DoctorDashboard = () => {
               </CardContent>
             </Card>
           </div>
+
+          <RecentActivity 
+            activities={activities} 
+            maxItems={5} 
+          />
         </TabsContent>
 
         <TabsContent value="appointments">
@@ -233,6 +208,10 @@ export const DoctorDashboard = () => {
 
         <TabsContent value="profile">
           <DoctorProfileForm />
+        </TabsContent>
+
+        <TabsContent value="verification">
+          <VerificationPage />
         </TabsContent>
       </Tabs>
     </div>
